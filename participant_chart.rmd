@@ -1,0 +1,93 @@
+---
+title: "Untitled"
+output: html_document
+date: "2022-11-09"
+---
+
+```{r set wd/ read in csv }
+setwd("C:/Users/torriw/Desktop/leah")
+
+participants<-read.csv("C:/Users/torriw/Desktop/leah/participants_char.csv")
+dem_2<-read.csv("C:/Users/torriw/Desktop/leah/CIFASD_2_demgroupclass.csv")
+dem_3<-read.csv("C:/Users/torriw/Desktop/leah/CIFASD_3_demgroupclass.csv")
+```
+
+
+
+```{r match sample ids}
+dem_2_match<-subset(dem_2,subjectid %in% participants$IID)
+dem_3_match<-subset(dem_3,subjectid %in% participants$IID)
+
+#combine df's
+dem_combined<-rbind(dem_2_match,dem_3_match)
+
+#remove duplicates
+dups_removed_dem<-dem_combined[!duplicated(dem_combined$subjectid),]
+
+#extract only alc exposed and controls
+con<-dups_removed_dem[dups_removed_dem$demgroupclass == "CON",]
+control<-dups_removed_dem[dups_removed_dem$demgroupclass == "Control",]
+fasd<-dups_removed_dem[dups_removed_dem$demgroupclass == "Alcohol Exposed/FASD",]
+alc_con<-rbind(con,control,fasd)
+write.csv(alc_con,"C:/Users/torriw/Desktop/leah/alc_con.csv",row.names = FALSE)
+
+#read in updated list in alphabetical order
+alc_con<-read.csv("C:/Users/torriw/Desktop/leah/alc_con.csv")
+
+#match non-duplicated and filtered df to original df
+#final_participant<-subset(alc_con,subjectid %in% participants$IID)
+final_participant<-subset(participants,IID %in% alc_con$subjectid)
+final_participant<-cbind(final_participant,alc_con$demgroupclass)
+write.csv(final_participant,"C:/Users/torriw/Desktop/leah/final_participant.csv",row.names = FALSE)
+```
+
+
+
+```{r find percentages of each group }
+#read in seperate tables for con and fasd
+controls_table<-read.csv("C:/Users/torriw/Desktop/leah/controls.csv")
+fasd_table<-read.csv("C:/Users/torriw/Desktop/leah/fasd.csv")
+
+#sex 
+library(dplyr)
+controls_sex<-controls_table %>% 
+  group_by(SEX) %>%
+  summarise(percent = 100 *n()/nrow(controls_table),
+            n = n())
+controls_sex
+
+fasd_sex<-fasd_table %>%    
+  group_by(SEX) %>%
+  summarise(percent = 100 *n()/nrow(fasd_table),
+            n = n())
+fasd_sex
+
+#race
+controls_race<-controls_table %>% 
+  group_by(race) %>%
+  summarise(percent = 100 *n()/nrow(controls_table),
+            n = n())
+controls_race
+
+fasd_race<-fasd_table %>% 
+  group_by(race) %>%
+  summarise(percent = 100 *n()/nrow(fasd_table),
+            n = n())
+fasd_race
+```
+```{r chi square test }
+sex_chi_table<-read.csv("C:/Users/torriw/Desktop/leah/sex_chi_table.csv")
+race_chi_table<-read.csv("C:/Users/torriw/Desktop/leah/race_chi_table.csv")
+
+sex_chi_test<-chisq.test(final_participant$SEX,final_participant$`alc_con$demgroupclass`,correct=FALSE)
+race_chi_test<-chisq.test(final_participant$race,final_participant$`alc_con$demgroupclass`,correct=FALSE)
+
+
+# male_control<-data.frame(controls_table[controls_table$SEX == "1",])
+# male_control<-male_control[,c(2,4)]
+# male_fasd<-fasd_table[fasd_table$SEX == "1",]
+# male_fasd<-male_fasd[,c(2,4)]
+
+
+```
+
